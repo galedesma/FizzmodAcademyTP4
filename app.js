@@ -6,6 +6,7 @@ import {
   listarProductos,
   mostrarFormularioEmail,
 } from "./controllers/index.js";
+import fs from "fs";
 import mongoose from "mongoose";
 import nodeMailer from "nodemailer";
 import Producto from "./models/producto.js";
@@ -13,6 +14,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+
 /* --------------CONEXIÓN A MONGODB-------------- */
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -45,10 +47,18 @@ const transporter = nodeMailer.createTransport({
 });
 
 /* -------------CONFIGURO EJS-------------- */
+
 app.set("views", "./views");
 app.set("view engine", "ejs");
 
-/* ---------------RUTAS-------------- */
+/* --------------FILE SYSTEM--------------- */
+
+if (!fs.existsSync("correo.dat")) {
+  fs.writeFileSync("correo.dat", "gonza.a.ledesma@gmail.com");
+  console.log("correo.dat email ini");
+}
+
+/* ------------------RUTAS----------------- */
 
 app.get("/", mostrarFormularioProducto);
 
@@ -59,6 +69,14 @@ app.get("/listar", listarProductos);
 app.get("/set-correo", mostrarFormularioEmail);
 
 app.post("/set-correo", (req, res) => {
+  let { usuarioEmail } = req.body;
+
+  fs.writeFile("correo.dat", usuarioEmail, (err) => {
+    if (err) {
+      throw new Error(`Error en la escritura de correo: ${err}`);
+    }
+  });
+
   Producto.find()
     .then((resultados) => {
       let rows = "";
@@ -75,7 +93,7 @@ app.post("/set-correo", (req, res) => {
 
       const mailOptions = {
         from: `${process.env.EMAIL}`,
-        to: `${req.body.usuarioEmail}`,
+        to: `${usuarioEmail}`,
         subject: `Nuestra lista alcanzó los ${resultados.length} productos`,
         html: `
         <table style="border: 1px solid black">
