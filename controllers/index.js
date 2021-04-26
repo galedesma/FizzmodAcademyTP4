@@ -1,64 +1,73 @@
-import express from "express";
-import bodyParser from "body-parser";
-import {
-  mostrarFormularioProducto,
-  postNuevoProducto,
-  listarProductos,
-  mostrarFormularioEmail,
-} from "./controllers/index.js";
-import mongoose from "mongoose";
-import nodeMailer from "nodemailer";
-import Producto from "./models/producto.js";
-import dotenv from "dotenv";
-dotenv.config();
-
-const app = express();
-/* --------------CONEXIÓN A MONGODB-------------- */
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-  })
-  .then(() => {
-    console.log("DB CONNECTED");
-  })
-  .catch((error) => {
-    console.log(error);
-  });
-
-mongoose.connection.on("error", (err) => {
-  console.log(`DB connection error: ${err.message}`);
-});
-
-/* --------------MIDDLEWARES--------------- */
-
-app.use(bodyParser.urlencoded({ extended: true }));
+//import nodeMailer from "nodemailer";
+import Producto from "../models/producto.js";
 
 /* ---------CONFIGURO NODEMAILER------------ */
 
-const transporter = nodeMailer.createTransport({
+/* const transporter = nodeMailer.createTransport({
   service: "gmail",
   auth: {
     user: `${process.env.EMAIL}`,
     pass: `${process.env.PASSWORD}`,
   },
-});
+}); */
 
-/* -------------CONFIGURO EJS-------------- */
-app.set("views", "./views");
-app.set("view engine", "ejs");
+/* ---------------------------------------- */
 
-/* ---------------RUTAS-------------- */
+export const mostrarFormularioProducto = (req, res) => {
+  res.render("formulario");
+};
 
-app.get("/", mostrarFormularioProducto);
+export const postNuevoProducto = (req, res) => {
+  let nuevoProducto = {
+    nombre: req.body.nombreProducto,
+    precio: req.body.precioProducto,
+    descripcion: req.body.descripcionProducto,
+    urlFoto: req.body.imagenProducto,
+  };
 
-app.post("/ingreso", postNuevoProducto);
+  const producto = new Producto(nuevoProducto);
 
-app.get("/listar", listarProductos);
+  producto
+    .save()
+    .then((result) => {
+      console.log("Creando nuevo producto", result);
 
-app.get("/set-correo", mostrarFormularioEmail);
+      Producto.find()
+        .then((resultados) => {
+          if (resultados.length % 10 == 0) {
+            res.redirect("/set-correo");
+          } else {
+            console.log("Producto Creado");
+            res.redirect("/");
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 
-app.post("/set-correo", (req, res) => {
+  console.log("Formulario enviado");
+};
+
+export const listarProductos = (req, res) => {
+  Producto.find()
+    .then((resultados) => {
+      res.render("tabla", { resultados });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
+
+export const mostrarFormularioEmail = (req, res) => {
+  res.render("set-correo");
+};
+
+/* La autenticación de las credenciales de google falla si trato de importar el método */
+/* export const enviarEmail = (req, res) => {
   Producto.find()
     .then((resultados) => {
       let rows = "";
@@ -108,10 +117,4 @@ app.post("/set-correo", (req, res) => {
   console.log("Correo Enviado");
   console.log(req.body);
   res.redirect("/set-correo");
-});
-
-const PORT = process.env.PORT || 8000;
-
-app.listen(PORT, () => {
-  console.log(`Servidor andando en puerto ${PORT}`);
-});
+} */

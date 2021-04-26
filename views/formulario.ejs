@@ -14,7 +14,11 @@
   </head>
   <body>
     <div class="container mt-3">
-      <form action="/ingreso" enctype="multipart/form-data" method="POST">
+      <form
+        action="/ingreso"
+        enctype="application/x-www-form-urlencoded"
+        method="POST"
+      >
         <div class="mb-3">
           <label for="nombreProducto" class="form-label"
             >Nombre del Producto:
@@ -51,10 +55,10 @@
         </div>
         <div class="mb-3">
           <label for="imagenProducto" class="form-label"
-            >Imagen del Producto:</label
+            >Imagen del Producto: (URL)</label
           >
           <input
-            type="file"
+            type="text"
             class="form-control"
             id="imagenProducto"
             name="imagenProducto"
